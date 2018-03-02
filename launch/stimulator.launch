@@ -1,0 +1,8 @@
+<launch>
+  <group ns="ema_trike">
+  <rosparam command="load" file="$(find ema_trike)/config/stimulator.yaml" ns="stimulator" />
+
+  <node name="stimulator" pkg="ema_trike" type="stimulator_node.py" output="screen" />
+
+  </group>
+</launch>
