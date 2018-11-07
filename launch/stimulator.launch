@@ -1,8 +1,14 @@
 <launch>
-  <group ns="ema_trike">
-  <rosparam command="load" file="$(find ema_trike)/config/stimulator.yaml" ns="stimulator" />
+  <group ns="ema">
+    <!-- load config files-->
+    <rosparam command="load" file="$(find hasomed_rehastim_stimulator)/config/stimulator.yaml" ns="stimulator" />
 
-  <node name="stimulator" pkg="ema_trike" type="stimulator_node.py" output="screen" />
-
+    <!-- launch nodes -->
+    <node name="stimulator" pkg="hasomed_rehastim_stimulator" type="stimulator_node.py" output="screen" respawn="true" respawn_delay="5"/>
   </group>
+
+  <!-- launch utils -->
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find yostlabs_3space_imu)/config/rviz/imu.rviz" output="log" respawn="true" respawn_delay="5"/>
+  <node name="rqt_graph" pkg="rqt_graph" type="rqt_graph" output="log" respawn="true" respawn_delay="5"/>
+  <node name="rqt_plot" pkg="rqt_plot" type="rqt_plot" output="log" respawn="true" respawn_delay="5"/> -->  
 </launch>
