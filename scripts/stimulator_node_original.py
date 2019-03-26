@@ -51,14 +51,14 @@ def main():
     sub_ccl = rospy.Subscriber('stimulator/ccl_update', Stimulator, callback = callback, callback_args = 'ccl_update')
     sub_single_pulse = rospy.Subscriber('stimulator/single_pulse', Stimulator, callback = callback, callback_args = 'single_pulse')
 
-    # initialize stimulator
-    stim_manager.initialize()
+    # initialize stimulator ccl mode
+    stim_manager.ccl_initialize()
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
-    # stop stimulator 
-    stim_manager.terminate()
+    # stop stimulator ccl mode
+    stim_manager.ccl_stop()
 
 if __name__ == '__main__':
     try:

@@ -15,11 +15,11 @@
 # ts2:            inter-pulse time in ms (1.5-17 ms in 0.5 steps)
 
 port: /dev/ttyUSB0
-operation: ccl
+operation: single
 
-channel_stim: [1, 2]
-channel_lf: []
-n_factor: 0
-freq: 50
-#ts1: 15
-ts2: 5
+# channel_stim: [1, 2]
+# channel_lf: []
+# n_factor: 0
+# freq: 50
+# #ts1: 15
+# ts2: 5
