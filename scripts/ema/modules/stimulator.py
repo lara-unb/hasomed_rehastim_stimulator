@@ -125,13 +125,13 @@ class Stimulator:
                                          rtscts=True)
 
     def initialize(self):
-        if self.operation is 'ccl':
+        if self.operation == 'ccl':
             self.ccl_initialize()
         else:
             pass
 
     def terminate(self):
-        if self.operation is 'ccl':
+        if self.operation == 'ccl':
             self.ccl_stop()
         else:
             pass
