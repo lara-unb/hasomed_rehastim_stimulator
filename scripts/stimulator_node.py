@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import rospy
-import ema.modules.stimulator as stimulator
 
 # import ros msgs
 from ema_common_msgs.msg import Stimulator
 from std_msgs.msg import String
+
+import ema.modules.stimulator as stimulator
 
 def callback(data, topic):
     global stim_manager
