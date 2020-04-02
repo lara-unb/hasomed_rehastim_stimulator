@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import binascii
 import serial
 import struct
@@ -100,6 +101,12 @@ class Stimulator:
             print 'port not found in config_dict, defaulting to /dev/ttyUSB0'
             self.port = '/dev/ttyUSB0'
 
+        try:
+            self.operation = config_dict['operation']
+        except KeyError:
+            self.operation = 'ccl'
+            print 'operation not found in config_dict, defaulting to ccl'
+
         # Build ccl_settings and set them to default values
         self.ccl_mode = {}
         self.ccl_pulse_width = {}
@@ -117,6 +124,18 @@ class Stimulator:
                                          parity=serial.PARITY_NONE,
                                          stopbits=serial.STOPBITS_TWO,
                                          rtscts=True)
+
+    def initialize(self):
+        if self.operation == 'ccl':
+            self.ccl_initialize()
+        else:
+            pass
+
+    def terminate(self):
+        if self.operation == 'ccl':
+            self.ccl_stop()
+        else:
+            pass
 
     def ccl_initialize(self):
         cmd = 'channelListModeInitialization'
