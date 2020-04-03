@@ -11,11 +11,11 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   ema_common_msgs
-  dynamic_reconfigure
+  # dynamic_reconfigure
 )
-generate_dynamic_reconfigure_options(
-  cfg/DynamicParams.cfg
-)
+# generate_dynamic_reconfigure_options(
+#   cfg/DynamicParams.cfg
+# )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
