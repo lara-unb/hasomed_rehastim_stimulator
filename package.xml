@@ -1,3 +1,14 @@
+<!--
+
+The package file is an XML file that defines properties about the package,
+such as the package name, version numbers, authors, maintainers, and most
+importantly the dependencies on other packages. It's used by ROS to gather
+all info and build the package, so it must be included with any package's
+root folder. Check its structure on:
+http://wiki.ros.org/catkin/package.xml
+
+-->
+
 <package format="2">
   <name>hasomed_rehastim_stimulator</name>
   <version>0.2.0</version>
