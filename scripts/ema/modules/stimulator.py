@@ -118,12 +118,18 @@ class Stimulator:
             self.ccl_pulse_current[c] = 0
 
         # Connect to stimulator
-        self.serial_port = serial.Serial(port=self.port,
-                                         baudrate=115200,
-                                         bytesize=serial.EIGHTBITS,
-                                         parity=serial.PARITY_NONE,
-                                         stopbits=serial.STOPBITS_TWO,
-                                         rtscts=True)
+        try:
+            self.serial_port = serial.Serial(port=self.port,
+                                             baudrate=115200,
+                                             bytesize=serial.EIGHTBITS,
+                                             parity=serial.PARITY_NONE,
+                                             stopbits=serial.STOPBITS_TWO,
+                                             rtscts=True)
+        except:  # Port not found, not configurable or can't be opened
+            self.serial_port = None
+            print 'failed to open stimulator serial port'
+            raise
+
 
     def initialize(self):
         if self.operation == 'ccl':
@@ -336,7 +342,11 @@ class Stimulator:
         return number
 
     def _writeRead(self, packet):
-        self.serial_port.write(packet)
+        try:
+            self.serial_port.write(packet)
+        except:
+            print 'failed to write to stimulator serial port'
+            raise
 
         ack = struct.unpack('B',self.serial_port.read(1))[0]
 
@@ -350,11 +360,16 @@ class Stimulator:
         return {0: False, 1: True}[error_code]
 
     def reconnect(self):
-        self.serial_port.close()
         try:
-            self.serial_port = serial.Serial(port=port, baudrate=115200, bytesize=EIGHTBITS, parity=PARITY_NONE, stopbits=STOPBITS_TWO, rtscts=True)
+            self.serial_port.close()
+            self.serial_port = serial.Serial(port=port, 
+                                             baudrate=115200, 
+                                             bytesize=EIGHTBITS, 
+                                             parity=PARITY_NONE, 
+                                             stopbits=STOPBITS_TWO, 
+                                             rtscts=True)
         except:
-            traceback.print_exc()
-            return False
+            print 'failed to reconnect stimulator serial port'
+            raise
 
         return True

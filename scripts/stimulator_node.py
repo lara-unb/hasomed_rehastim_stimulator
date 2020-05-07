@@ -40,15 +40,24 @@ def callback(data, topic):
                 stim_manager.ccl_pulse_width[c] = pw
                 stim_manager.ccl_pulse_current[c] = pc
 
-        stim_manager.ccl_update(mode=stim_manager.ccl_mode,
-                                pulse_width=stim_manager.ccl_pulse_width,
-                                pulse_current=stim_manager.ccl_pulse_current)
+        try:
+            stim_manager.ccl_update(mode=stim_manager.ccl_mode,
+                                    pulse_width=stim_manager.ccl_pulse_width,
+                                    pulse_current=stim_manager.ccl_pulse_current)
+        except:
+            raise  # ROS will handle the error
     else:
         for c, m, pw, pc in zip(data.channel, data.mode, data.pulse_width, data.pulse_current):
             rospy.logdebug('single_pulse in channel %d', c)
             rospy.logdebug('pulse_width %d', pw)
             rospy.logdebug('pulse_current %d', pc)
-            stim_manager.single_pulse(channel_number=c, pulse_width=pw, pulse_current=pc)
+
+            try:
+                stim_manager.single_pulse(channel_number=c,
+                                          pulse_width=pw, 
+                                          pulse_current=pc)
+            except:
+                raise  # ROS will handle the error
 
 
 def main():
@@ -57,24 +66,28 @@ def main():
 
     # init stimulator node
     rospy.init_node('stimulator')
-
-    # get stimulator config
-    stim_manager = stimulator.Stimulator(rospy.get_param('stimulator'))
-
+    
     # list subscribed topics
     sub_ccl = rospy.Subscriber('stimulator/ccl_update', Stimulator, 
                 callback=callback, callback_args='ccl_update')
     sub_single_pulse = rospy.Subscriber('stimulator/single_pulse', Stimulator, 
                         callback=callback, callback_args='single_pulse')
 
-    # initialize stimulator
-    stim_manager.initialize()
+    try:
+        # get stimulator config
+        stim_manager = stimulator.Stimulator(rospy.get_param('stimulator'))
 
-    # spin() simply keeps python from exiting until this node is stopped
-    rospy.spin()
+        # initialize stimulator
+        stim_manager.initialize()
+        
+        # spin() simply keeps python from exiting until this node is stopped
+        rospy.spin()
 
-    # stop stimulator 
-    stim_manager.terminate()
+        # stop stimulator 
+        stim_manager.terminate()
+
+    except:
+        raise  # ROS will handle the error
 
 
 if __name__ == '__main__':
