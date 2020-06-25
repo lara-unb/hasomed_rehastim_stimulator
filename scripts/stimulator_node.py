@@ -15,7 +15,7 @@ http://wiki.ros.org/Nodes
 """
 
 import rospy
-import ema.modules.stimulator as stimulator
+import modules.stimulator as stimulator
 
 # Import ROS msgs
 from std_msgs.msg import String

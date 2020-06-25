@@ -11,14 +11,14 @@ http://wiki.ros.org/roslaunch/XML
 -->
 
 <launch>
-  <group ns="ema">
+    <group ns="ema">
 
-    <!-- load common config files-->
-    <rosparam command="load" file="$(find hasomed_rehastim_stimulator)/config/CCL18F50.yaml" ns="stimulator"/>
+        <!-- load common config files-->
+        <rosparam command="load" file="$(find hasomed_rehastim_stimulator)/config/CCL18F50.yaml" ns="stimulator"/>
 
-    <!-- launch common nodes -->
-    <node name="stimulator" pkg="hasomed_rehastim_stimulator" type="stimulator_node.py" output="log" respawn="true" respawn_delay="5"/>
-    <node name="dashboard" pkg="rqt_gui" type="rqt_gui" output="log" args="--perspective-file $(find hasomed_rehastim_stimulator)/perspective/EMA_Stim.perspective"/>
+        <!-- launch common nodes -->
+        <node name="stimulator" pkg="hasomed_rehastim_stimulator" type="stimulator_node.py" output="log" respawn="true" respawn_delay="5"/>
+        <node name="dashboard" pkg="rqt_gui" type="rqt_gui" output="log" args="--perspective-file $(find hasomed_rehastim_stimulator)/perspective/EMA_Stim.perspective"/>
 
-  </group>
+    </group>
 </launch>
