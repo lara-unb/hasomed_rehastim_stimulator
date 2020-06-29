@@ -1,4 +1,16 @@
-#!/usr/bin/env python
+"""
+
+Particularly, this code is an auxiliary module for the electrical stimulator
+application. It consists of classes and methods that establish the serial
+comm and give support in a deeper level.
+
+The ROS node uses this code. It gives support in a deeper level, dealing
+with minor details and is supposed to be independent of ROS, meaning it
+shouldn't have to interact with ROS in any way. For example, it would
+establish serial comm and treat raw measurements instead of publishing a
+filtered sensor measurement as a ROS message to other ROS nodes.
+
+"""
 
 import binascii
 import serial
@@ -56,7 +68,7 @@ mode_dict = {
     'triplet': 2
 }
 
-class Stimulator:
+class Stimulator(object):
     def __init__(self, config_dict):
         self.config_dict = config_dict
 
@@ -64,48 +76,48 @@ class Stimulator:
             self.channel_stim = config_dict['channel_stim']
         except KeyError:
             self.channel_stim = []
-            print 'channel_stim not found in config_dict, defaulting to []'
+            print('channel_stim not found in config_dict, defaulting to []')
 
         try:
             self.channel_lf = config_dict['channel_lf']
         except KeyError:
             self.channel_lf = []
-            print 'channel_lf not found in config_dict, defaulting to []'
+            print('channel_lf not found in config_dict, defaulting to []')
 
         try:
             self.n_factor = config_dict['n_factor']
         except KeyError:
             self.n_factor = 0
-            print 'n_factor not found in config_dict, defaulting to 0'
+            print('n_factor not found in config_dict, defaulting to 0')
 
         try:
             self.freq = config_dict['freq']
             self.ts1 = round((1/float(self.freq))*1000)
         except KeyError:
-            print 'freq not found in config_dict, using ts1 for Main_Time'
+            print('freq not found in config_dict, using ts1 for Main_Time')
             try:
                 self.ts1 = config_dict['ts1']
             except KeyError:
-                print 'ts1 not found in config_dict, defaulting to 20ms (50 Hz)'
+                print('ts1 not found in config_dict, defaulting to 20ms (50 Hz)')
                 self.ts1 = 20
 
         try:
             self.ts2 = config_dict['ts2']
         except KeyError:
-            print 'ts2 not found in config_dict, defaulting to 1.5'
+            print('ts2 not found in config_dict, defaulting to 1.5')
             self.ts2 = 1.5
 
         try:
             self.port = config_dict['port']
         except KeyError:
-            print 'port not found in config_dict, defaulting to /dev/ttyUSB0'
+            print('port not found in config_dict, defaulting to /dev/ttyUSB0')
             self.port = '/dev/ttyUSB0'
 
         try:
             self.operation = config_dict['operation']
         except KeyError:
             self.operation = 'ccl'
-            print 'operation not found in config_dict, defaulting to ccl'
+            print('operation not found in config_dict, defaulting to ccl')
 
         # Build ccl_settings and set them to default values
         self.ccl_mode = {}
@@ -127,7 +139,7 @@ class Stimulator:
                                              rtscts=True)
         except:  # Port not found, not configurable or can't be opened
             self.serial_port = None
-            print 'failed to open stimulator serial port'
+            print('failed to open stimulator serial port')
             raise
 
 
@@ -153,10 +165,10 @@ class Stimulator:
         gt = int(round((self.ts2 - 1.5) / 0.5))                  # grab from config: ts2
         mt = int(round((self.ts1 - 1.0) / 0.5))                  # grab from config: ts1
 
-        # print 'gt',gt
-        # print 'mt',mt
-        # print 'ts1',self.ts1
-        # print 'ts2',self.ts2
+        # print('gt',gt)
+        # print('mt',mt)
+        # print('ts1',self.ts1)
+        # print('ts2',self.ts2)
 
         check = (nf + cs + clf + gt + mt) % 8
 
@@ -238,7 +250,7 @@ class Stimulator:
 
         pkt = self._buildPacket(cmd,fields)
 
-        # print binascii.hexlify(pkt)
+        # print(binascii.hexlify(pkt))
 
         return self._writeRead(pkt)
 
@@ -266,9 +278,9 @@ class Stimulator:
                 bit_count += command['field_size'][field]
                 continue
 
-            # print 'field:',field
-            # print 'fv:','{:011b}'.format(fv)
-            # print 'fs:',fs
+            # print('field:',field)
+            # print('fv:','{:011b}'.format(fv))
+            # print('fs:',fs)
 
             # figure out where the field should be placed in byte
             shift = 7 - (bit_count + fs)
@@ -279,7 +291,7 @@ class Stimulator:
                 command_byte |= fv << shift
                 bit_count += fs
 
-                # print 'command_byte','{:08b}'.format(command_byte)
+                # print('command_byte','{:08b}'.format(command_byte))
 
                 # check if byte is full and we should start a new one
                 if bit_count == 7:
@@ -297,7 +309,7 @@ class Stimulator:
                 # insert fv in the right place in current command_byte
                 command_byte |= fv >> shift_right
 
-                # print 'command_byte','{:08b}'.format(command_byte)
+                # print('command_byte','{:08b}'.format(command_byte))
 
                 # append current command_byte to command_bytes
                 command_bytes.append(command_byte)
@@ -311,7 +323,7 @@ class Stimulator:
                 command_byte |= fv << shift_left
                 bit_count += fs_next
 
-                # print 'command_byte','{:08b}'.format(command_byte)
+                # print('command_byte','{:08b}'.format(command_byte))
 
                 # check if byte is full and we should start a new one
                 if bit_count == 7:
@@ -319,13 +331,13 @@ class Stimulator:
                     command_byte = 0b00000000
                     bit_count = 0
 
-        # print 'final results:'
+        # print('final results:')
         # for i in range(len(command_bytes)):
-        #     print i,'{:08b}'.format(command_bytes[i])
+        #     print(i,'{:08b}'.format(command_bytes[i]))
 
         pkt = bytearray(command_bytes)
 
-        # print binascii.hexlify(pkt)
+        # print(binascii.hexlify(pkt))
 
         return pkt
 
@@ -345,17 +357,17 @@ class Stimulator:
         try:
             self.serial_port.write(packet)
         except:
-            print 'failed to write to stimulator serial port'
+            print('failed to write to stimulator serial port')
             raise
 
         ack = struct.unpack('B',self.serial_port.read(1))[0]
 
-        # print 'ack', '{0:08b}'.format(ack)
+        # print('ack', '{0:08b}'.format(ack))
 
         ident = ack >> 6
         error_code = ack & 1
-        # print 'ident', reverse_command_dict[ident]
-        # print 'error_code', error_code
+        # print('ident', reverse_command_dict[ident])
+        # print('error_code', error_code)
 
         return {0: False, 1: True}[error_code]
 
@@ -369,7 +381,7 @@ class Stimulator:
                                              stopbits=STOPBITS_TWO, 
                                              rtscts=True)
         except:
-            print 'failed to reconnect stimulator serial port'
+            print('failed to reconnect stimulator serial port')
             raise
 
         return True
