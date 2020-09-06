@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """
 
@@ -14,19 +14,50 @@ http://wiki.ros.org/Nodes
 
 """
 
-# Python 2 and 3 compatibility
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from builtins import *
+# # Python 2 and 3 compatibility
+# from __future__ import absolute_import
+# from __future__ import division
+# from __future__ import print_function
+# from builtins import *
 
 import rospy
 import modules.stimulator as stimulator
 
 # Import ROS msgs
 from std_msgs.msg import String
+from std_srvs.srv import Empty
 from ema_common_msgs.msg import Stimulator
+from ema_common_msgs.srv import SetUInt16
 
+# import utilities
+import yaml
+import rospkg
+
+def kill_node_callback(req):
+    rospy.loginfo('Node shutdown: service request')
+    rospy.Timer(rospy.Duration(1), rospy.signal_shutdown, oneshot=True)
+    return {}
+
+def set_frequency_callback(req):
+    freq_now = rospy.get_param('stimulator/freq')
+    msg = str(freq_now)
+    if freq_now != req.data:
+        if req.data > 0 and req.data <= 100:
+            rospy.set_param('stimulator/freq', req.data)
+            rospack = rospkg.RosPack()
+            stim_cfg_path = rospack.get_path('hasomed_rehastim_stimulator')+'/config/stim.yaml'
+
+            with open(stim_cfg_path, 'r') as f:
+                stim_file = yaml.safe_load(f)
+                stim_file['freq'] = req.data
+            with open(stim_cfg_path, 'w') as f:
+                yaml.safe_dump(stim_file, f)
+
+            msg = str(req.data)
+            rospy.loginfo('Node shutdown: new stim frequency')
+            rospy.Timer(rospy.Duration(1), rospy.signal_shutdown, oneshot=True)
+            return {'success':True, 'message':msg}
+    return {'success':False, 'message':msg}
 
 def callback(data, topic):
     global stim_manager
@@ -72,7 +103,14 @@ def main():
 
     # init stimulator node
     rospy.init_node('stimulator')
-    
+
+    # list provided services
+    services = {}
+    services['kill_node'] = rospy.Service('stimulator/kill_node',
+        Empty, kill_node_callback)
+    services['set_frequency'] = rospy.Service('stimulator/set_frequency',
+        SetUInt16, set_frequency_callback)
+
     # list subscribed topics
     sub_ccl = rospy.Subscriber('stimulator/ccl_update', Stimulator, 
                 callback=callback, callback_args='ccl_update')
