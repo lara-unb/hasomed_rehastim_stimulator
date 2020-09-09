@@ -34,25 +34,36 @@ import yaml
 import rospkg
 
 def kill_node_callback(req):
+    """ROS Service handler to shutdown this node.
+
+    Attributes:
+        req (Empty): empty input
+    """
+    # Shutdown this node and rely on roslaunch respawn to restart
     rospy.loginfo('Node shutdown: service request')
     rospy.Timer(rospy.Duration(1), rospy.signal_shutdown, oneshot=True)
     return {}
 
 def set_frequency_callback(req):
+    """ROS Service handler to set the stim frequency.
+
+    Attributes:
+        req (int): new frequency
+    """
     freq_now = rospy.get_param('stimulator/freq')
     msg = str(freq_now)
     if freq_now != req.data:
-        if req.data > 0 and req.data <= 100:
-            rospy.set_param('stimulator/freq', req.data)
+        if req.data > 0 and req.data <= 100:  # Acceptable range
+            rospy.set_param('stimulator/freq', req.data)  # Change the param server
             rospack = rospkg.RosPack()
             stim_cfg_path = rospack.get_path('hasomed_rehastim_stimulator')+'/config/stim.yaml'
-
+            # Change the config yaml file
             with open(stim_cfg_path, 'r') as f:
                 stim_file = yaml.safe_load(f)
                 stim_file['freq'] = req.data
             with open(stim_cfg_path, 'w') as f:
                 yaml.safe_dump(stim_file, f)
-
+            # Shutdown this node and rely on roslaunch respawn to restart
             msg = str(req.data)
             rospy.loginfo('Node shutdown: new stim frequency')
             rospy.Timer(rospy.Duration(1), rospy.signal_shutdown, oneshot=True)
