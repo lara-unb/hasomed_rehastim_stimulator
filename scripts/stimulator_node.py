@@ -14,6 +14,9 @@ http://wiki.ros.org/Nodes
 
 """
 
+# Note: To run in python3 uncomment below imports and change first line to python3: 
+# !/usr/bin/env python3 (tested with ROS Noetic in RPI4)
+
 # # Python 2 and 3 compatibility
 # from __future__ import absolute_import
 # from __future__ import division
