@@ -137,12 +137,12 @@ def main():
 
         # initialize stimulator
         stim_manager.initialize()
-        
+
+        # prepare function to be executed when shutting down
+        rospy.on_shutdown(stim_manager.terminate)
+
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
-
-        # stop stimulator 
-        stim_manager.terminate()
 
     except:
         raise  # ROS will handle the error
