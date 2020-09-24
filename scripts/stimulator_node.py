@@ -12,10 +12,13 @@ a ROS message to other ROS nodes instead of establishing the serial comm
 and treating that raw measurement. For more info, check:
 http://wiki.ros.org/Nodes
 
-"""
+                    _________ NOTES _________
 
-# Note: To run in python3 uncomment below imports and change first line to python3: 
-# !/usr/bin/env python3 (tested with ROS Noetic in RPI4)
+To run with Python3, change shebang for "!/usr/bin/env python3" and uncomment
+the first imports from future and builtins. It has been tested with ROS
+Noetic on the Raspberry Pi 4.
+
+"""
 
 # # Python 2 and 3 compatibility
 # from __future__ import absolute_import
@@ -32,7 +35,7 @@ from std_srvs.srv import Empty
 from ema_common_msgs.msg import Stimulator
 from ema_common_msgs.srv import SetUInt16
 
-# import utilities
+# Import utilities
 import yaml
 import rospkg
 
@@ -53,6 +56,7 @@ def set_frequency_callback(req):
     Attributes:
         req (int): new frequency
     """
+    rospy.loginfo('Set frequency: service request')
     freq_now = rospy.get_param('stimulator/freq')
     msg = str(freq_now)
     if freq_now != req.data:
@@ -76,9 +80,9 @@ def set_frequency_callback(req):
 def callback(data, topic):
     global stim_manager
 
-    if topic == 'ccl_update':
+    if topic == 'ccl_update':  # CCL operation mode
+        # Update the parameters for each channel being used
         for c, m, pw, pc in zip(data.channel, data.mode, data.pulse_width, data.pulse_current):
-
             if c not in stim_manager.channel_stim:
                 rospy.logwarn('channel %d not in channel_stim!', c)
             else:
@@ -86,66 +90,66 @@ def callback(data, topic):
                 rospy.logdebug('mode %d', m)
                 rospy.logdebug('pulse_width %d', pw)
                 rospy.logdebug('pulse_current %d', pc)
-
                 stim_manager.ccl_mode[c] = m
                 stim_manager.ccl_pulse_width[c] = pw
                 stim_manager.ccl_pulse_current[c] = pc
-
         try:
             stim_manager.ccl_update(mode=stim_manager.ccl_mode,
                                     pulse_width=stim_manager.ccl_pulse_width,
                                     pulse_current=stim_manager.ccl_pulse_current)
         except:
-            raise  # ROS will handle the error
-    else:
+            raise  # Let ROS deal with the error
+    else:  # Single operation mode
+        # Update the parameters for each channel being used
         for c, m, pw, pc in zip(data.channel, data.mode, data.pulse_width, data.pulse_current):
             rospy.logdebug('single_pulse in channel %d', c)
             rospy.logdebug('pulse_width %d', pw)
             rospy.logdebug('pulse_current %d', pc)
-
             try:
                 stim_manager.single_pulse(channel_number=c,
                                           pulse_width=pw, 
                                           pulse_current=pc)
             except:
-                raise  # ROS will handle the error
-
+                raise  # Let ROS deal with the error
 
 def main():
-    # define stim_manager as global so it can be accessed in callback
     global stim_manager
 
-    # init stimulator node
+    # Init stimulator node
+    rospy.loginfo('Initializing node')
     rospy.init_node('stimulator')
 
-    # list provided services
+    # List provided services
+    rospy.loginfo('Setting up services')
     services = {}
     services['kill_node'] = rospy.Service('stimulator/kill_node',
         Empty, kill_node_callback)
     services['set_frequency'] = rospy.Service('stimulator/set_frequency',
         SetUInt16, set_frequency_callback)
 
-    # list subscribed topics
-    sub_ccl = rospy.Subscriber('stimulator/ccl_update', Stimulator, 
-                callback=callback, callback_args='ccl_update')
-    sub_single_pulse = rospy.Subscriber('stimulator/single_pulse', Stimulator, 
-                        callback=callback, callback_args='single_pulse')
+    # List subscribed topics
+    rospy.loginfo('Setting up topics')
+    sub_ccl = rospy.Subscriber('stimulator/ccl_update', Stimulator,
+        callback=callback, callback_args='ccl_update')
+    sub_single_pulse = rospy.Subscriber('stimulator/single_pulse', Stimulator,
+        callback=callback, callback_args='single_pulse')
 
     try:
-        # get stimulator config
+        # Get stimulator config
+        rospy.loginfo('Building manager class')
         stim_manager = stimulator.Stimulator(rospy.get_param('stimulator'))
 
-        # initialize stimulator
-        stim_manager.initialize()
-
-        # prepare function to be executed when shutting down
+        # Prepare function to be executed when shutting down
         rospy.on_shutdown(stim_manager.terminate)
 
-        # spin() simply keeps python from exiting until this node is stopped
+        # Init stimulator setup
+        stim_manager.initialize()
+
+        # Keep python from exiting until the node stops
         rospy.spin()
 
     except:
-        raise  # ROS will handle the error
+        raise  # Let ROS deal with the error
 
 
 if __name__ == '__main__':
