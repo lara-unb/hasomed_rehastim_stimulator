@@ -31,6 +31,7 @@ import modules.stimulator as stimulator
 
 # Import ROS msgs
 from std_msgs.msg import String
+from std_msgs.msg import Int32MultiArray
 from std_srvs.srv import Empty
 from ema_common_msgs.msg import Stimulator
 from ema_common_msgs.srv import SetUInt16
@@ -112,6 +113,15 @@ def callback(data, topic):
             except:
                 raise  # Let ROS deal with the error
 
+def update_callback(data, label):
+    global current_list
+    global pw_list
+
+    if label == 'current':
+        current_list = data.data[1:]
+    elif label == 'pulse_width':
+        pw_list = data.data[1:]
+
 def main():
     global stim_manager
 
@@ -127,13 +137,6 @@ def main():
     services['set_frequency'] = rospy.Service('stimulator/set_frequency',
         SetUInt16, set_frequency_callback)
 
-    # List subscribed topics
-    rospy.loginfo('Setting up topics')
-    sub_ccl = rospy.Subscriber('stimulator/ccl_update', Stimulator,
-        callback=callback, callback_args='ccl_update')
-    sub_single_pulse = rospy.Subscriber('stimulator/single_pulse', Stimulator,
-        callback=callback, callback_args='single_pulse')
-
     try:
         # Get stimulator config
         rospy.loginfo('Building manager class')
@@ -145,8 +148,65 @@ def main():
         # Init stimulator setup
         stim_manager.initialize()
 
-        # Keep python from exiting until the node stops
-        rospy.spin()
+        if rospy.get_param('stimulator/matrix'):
+            global current_list
+            global pw_list
+
+            current_list = 8*[0]
+            pw_list = 8*[0]
+            ch_latest = 8
+
+            rospy.loginfo('Setting up topics')
+            sub_current = rospy.Subscriber('stimulator/current', Int32MultiArray,
+                callback=update_callback, callback_args='current')
+            sub_pw = rospy.Subscriber('stimulator/pulse_width', Int32MultiArray,
+                callback=update_callback, callback_args='pulse_width')
+            pub_activation = rospy.Publisher('stimulator/activation',
+                Int32MultiArray, queue_size=10)
+
+            # Build stimulator msg
+            activation_msg = Int32MultiArray()
+            activation_msg.data = 9*[0]
+
+            # Define loop rate (in hz)
+            rate = rospy.Rate(int(rospy.get_param('stimulator/matrix')))
+            # Node loop
+            while not rospy.is_shutdown():
+                reorder = current_list[ch_latest:]+current_list[:ch_latest-1]
+                c = None
+                for idx, item in enumerate(reorder):
+                    if item:
+                        c = 1+((ch_latest+idx)%8)  # Next channel to be activated
+                        ch_latest = c  # Update last channel
+                        pc = current_list[c-1]
+                        pw = pw_list[c-1]
+                        break
+                if not c:
+                    c = 1
+                    pc = pw = 0
+                rospy.logdebug('single_pulse in channel %d', c)
+                rospy.logdebug('pulse_width %d', pw)
+                rospy.logdebug('pulse_current %d', pc)
+                stim_manager.single_pulse(channel_number=c,
+                                          pulse_width=pw, 
+                                          pulse_current=pc)
+
+                activation_msg.data = 9*[0]
+                activation_msg.data[c] = pc
+                pub_activation.publish(activation_msg)
+                # Wait for next loop
+                rate.sleep()
+
+        else:
+            # List subscribed topics
+            rospy.loginfo('Setting up topics')
+            sub_ccl = rospy.Subscriber('stimulator/ccl_update', Stimulator,
+                callback=callback, callback_args='ccl_update')
+            sub_single_pulse = rospy.Subscriber('stimulator/single_pulse', Stimulator,
+                callback=callback, callback_args='single_pulse')
+
+            # Keep python from exiting until the node stops
+            rospy.spin()
 
     except:
         raise  # Let ROS deal with the error
