@@ -40,16 +40,6 @@ from ema_common_msgs.srv import SetUInt16
 import yaml
 import rospkg
 
-def kill_node_callback(req):
-    """ROS Service handler to shutdown this node.
-
-    Attributes:
-        req (Empty): empty input
-    """
-    # Shutdown this node and rely on roslaunch respawn to restart
-    rospy.loginfo('Node shutdown: service request')
-    rospy.Timer(rospy.Duration(1), rospy.signal_shutdown, oneshot=True)
-    return {}
 
 def set_frequency_callback(req):
     """ROS Service handler to set the stim frequency.
@@ -132,8 +122,6 @@ def main():
     # List provided services
     rospy.loginfo('Setting up services')
     services = {}
-    services['kill_node'] = rospy.Service('stimulator/kill_node',
-        Empty, kill_node_callback)
     services['set_frequency'] = rospy.Service('stimulator/set_frequency',
         SetUInt16, set_frequency_callback)
 
@@ -161,7 +149,7 @@ def main():
                 callback=update_callback, callback_args='current')
             sub_pw = rospy.Subscriber('stimulator/pulse_width', Int32MultiArray,
                 callback=update_callback, callback_args='pulse_width')
-            pub_activation = rospy.Publisher('stimulator/activation',
+            pub_activation = rospy.Publisher('stimulator/matrix/activation',
                 Int32MultiArray, queue_size=10)
 
             # Build stimulator msg
