@@ -136,7 +136,7 @@ def main():
         # Init stimulator setup
         stim_manager.initialize()
 
-        if rospy.get_param('stimulator/matrix'):
+        if rospy.get_param('stimulator/matrix', False):
             global current_list
             global pw_list
 
