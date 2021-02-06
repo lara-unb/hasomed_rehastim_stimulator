@@ -67,11 +67,13 @@ class StimulatorWrapper(object):
         self.build_msgs()
         self.set_topics()
         # Configure based on electrode matrix
-        rospy.loginfo('Adapting to electrode matrix')
         if self.matrix_on:
+            rospy.loginfo('Using electrode matrix')
             self.current = 8*[0]
             self.pw = 8*[0]
             self.ch_latest = 8
+        else:
+            rospy.loginfo('Using conventional electrode')
         # Prepare function to be executed when shutting down
         rospy.on_shutdown(self.stimulator.terminate)
 
